@@ -8,7 +8,7 @@ The goal of the game is to memorize and repeat an increasingly long sequence of 
 
 This project is being developed as a group project for **ECE 3130: Microcomputer Systems** at **Tennessee Technological University**.
 
-NOTE: *All members that worked on this are credited near the bottom of the README*
+**NOTE:** *All members that worked on this are credited near the bottom of the README*
 
 ## Hardware Requirements
 
