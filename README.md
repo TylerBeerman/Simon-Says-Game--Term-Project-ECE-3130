@@ -7,6 +7,7 @@ This project is an electronic version of the classic **Simon Says memory game**,
 The goal of the game is to memorize and repeat an increasingly long sequence of LED signals. Each round, the game adds a new LED to the sequence. The player must repeat the sequence in the correct order. The game continues until the player makes a mistake.
 
 This project is being developed as a group project for **ECE 3130: Microcomputer Systems** at **Tennessee Technological University**.
+All members that worked on this are credited near the bottom of the README
 
 ## Hardware Requirements
 
