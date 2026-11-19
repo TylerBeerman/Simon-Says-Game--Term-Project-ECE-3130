@@ -78,7 +78,7 @@ Some of the main variables used in the game include:
 ## Team Members
 
 - Noah Boggess
-- [Team Member 2]
+- Richy Huichapa - Applied Physics Major Junior
 - Tyler Beerman - Electrical Engineering Major Junior
 
 ## Project Goal
