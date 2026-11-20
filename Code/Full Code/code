@@ -1,4 +1,17 @@
 /* USER CODE BEGIN Header */
+//Welcome to our Term Project
+//We decided to so a simon says memory game using the onboard LEDs
+//
+//Team Members include:
+// Noah Boggess
+// Tyler Beerman
+// Richy Huichapa
+//
+
+//
+// enjoy
+//
+
 /**
   ******************************************************************************
   * @file           : main.c
