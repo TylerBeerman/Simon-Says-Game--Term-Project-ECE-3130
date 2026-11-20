@@ -36,10 +36,19 @@ void SystemClock_Config(void);
 // Sets of the GPIO pins
 static void MX_GPIO_Init(void);
 
-// This lab will require a lot of programming, but most of what you'll need
-//	is the function in the lecture slides! Slides 13-18 from Lecture 4 part 3
-//	have all the code you need to work with the LCD, and slides 32-45 have
-//	all the code you need to work with the keypad
+int Sequence[20];
+int Score = 0;
+int PlayerPosition = 0;
+int PlayerInput = -1;
+int GameOver = 0;
+int StartGame = 0;
+int Round = 1;
+int RandomLED;
+
+int Button1; int Button2; int Button3; int Button4;
+
+int LED_Delay = 500;
+int Button_Delay = 25;
 
 // The main function, and the entry point of the program
 int main(void)
@@ -49,10 +58,38 @@ int main(void)
   MX_GPIO_Init();
 
   // TODO: Put any other initialization code here
+  // Initialize LCD
+  Initialize_Game();
 
   while (1)
   {
     // TODO: Put your main code here. It will run over and over again until the program is stopped
+
+     // Wait for player to start
+
+        Generate_Sequence();
+
+        Display_Sequence();
+
+        PlayerPosition = 0;
+
+        while (PlayerPosition < Round && GameOver == 0)
+        {
+            Check_Input();
+        }
+
+        if (GameOver == 1)
+        {
+            Game_Over_Display();
+
+            // Wait for restart
+        }
+        else
+        {
+            Score = Round;
+            Round++;
+        }
+    
 	}
 }
 
@@ -62,6 +99,119 @@ int main(void)
 static void MX_GPIO_Init(void)
 {
   // TODO: Initialize any input or output pins you'll use here
+}
+
+// this is the start of our game functions
+void Initialize_Game(void)
+{
+    Round = 1;
+    Score = 0;
+    PlayerPosition = 0;
+    PlayerInput = -1;
+    GameOver = 0;
+}
+
+void Generate_Sequence(void)
+{
+    RandomLED = rand() % 4;
+
+    Sequence[Round - 1] = RandomLED;
+}
+
+void Display_Sequence(void)
+{
+    int i;
+
+    for (i = 0; i < Round; i++)
+    {
+        Turn_On_LED(Sequence[i]);
+
+        Delay(LED_Delay);
+
+        Turn_Off_All_LEDs();
+
+        Delay(250);
+    }
+}
+
+void Turn_On_LED(int LED)
+{
+    Turn_Off_All_LEDs();
+
+    switch (LED)
+    {
+        case 0:
+            // Turn on LED 1
+            break;
+
+        case 1:
+            // Turn on LED 2
+            break;
+
+        case 2:
+            // Turn on LED 3
+            break;
+
+        case 3:
+            // Turn on LED 4
+            break;
+    }
+}
+
+void Turn_Off_All_LEDs(void)
+{
+    // Turn off LED 1
+    // Turn off LED 2
+    // Turn off LED 3
+    // Turn off LED 4
+}
+
+int Read_Buttons(void)
+{
+    if (/* Button 1 is pressed */)
+        return 0;
+
+    if (/* Button 2 is pressed */)
+        return 1;
+
+    if (/* Button 3 is pressed */)
+        return 2;
+
+    if (/* Button 4 is pressed */)
+        return 3;
+
+    return -1;
+}
+
+void Check_Input(void)
+{
+    PlayerInput = Read_Buttons();
+
+    if (PlayerInput != -1)
+    {
+        if (PlayerInput == Sequence[PlayerPosition])
+        {
+            PlayerPosition++;
+        }
+        else
+        {
+            GameOver = 1;
+        }
+    }
+}
+
+void Game_Over_Display(void)
+{
+    Turn_Off_All_LEDs();
+
+    // Display GAME OVER on LCD
+    // Display final Score on LCD
+}
+
+void Reset_Game(void)
+{
+    Initialize_Game();
+    Turn_Off_All_LEDs();
 }
 
 void Write_SR_LCD(uint8_t temp) {
