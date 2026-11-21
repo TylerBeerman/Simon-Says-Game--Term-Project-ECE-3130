@@ -1,1 +1,5 @@
-reset the game function
+void Reset_Game(void)
+{
+    Initialize_Game();
+    Turn_Off_All_LEDs();
+}
