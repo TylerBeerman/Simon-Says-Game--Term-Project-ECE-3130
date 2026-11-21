@@ -5,19 +5,23 @@ void Turn_On_LED(int LED)
     switch (LED)
     {
         case 0:
-            // Turn on LED 1
+            // LED0 -> PA1
+            GPIOA->ODR |= (1 << 1);
             break;
 
         case 1:
-            // Turn on LED 2
+            // LED1 -> PA0
+            GPIOA->ODR |= (1 << 0);
             break;
 
         case 2:
-            // Turn on LED 3
+            // LED2 -> PC7
+            GPIOC->ODR |= (1 << 7);
             break;
 
         case 3:
-            // Turn on LED 4
+            // LED3 -> PC8
+            GPIOC->ODR |= (1 << 8);
             break;
     }
 }
