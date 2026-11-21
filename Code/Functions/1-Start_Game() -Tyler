@@ -1,1 +1,8 @@
-start game function here
+void Initialize_Game(void)
+{
+    Round = 1;
+    Score = 0;
+    PlayerPosition = 0;
+    PlayerInput = -1;
+    GameOver = 0;
+}
