@@ -1,15 +1,27 @@
 void Display_Sequence(void)
 {
     int i;
+    char text[17];
+
+    LCD_Clear();
+    sprintf(text, "Round %d", Round);
+    LCD_Print(text);
+    LCD_SetCursor(1, 0);
+    LCD_Print("Watch closely");
+
+    HAL_Delay(750);
 
     for (i = 0; i < Round; i++)
     {
         Turn_On_LED(Sequence[i]);
 
-        Delay(LED_Delay);
+        HAL_Delay(LED_Delay);
 
         Turn_Off_All_LEDs();
 
-        Delay(250);
+        HAL_Delay(250);
     }
+
+    LCD_Clear();
+    LCD_Print("Your turn");
 }
