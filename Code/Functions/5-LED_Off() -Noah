@@ -1,1 +1,7 @@
-turn the led off funct
+void Turn_Off_All_LEDs(void)
+{
+    // Turn off LED 1
+    // Turn off LED 2
+    // Turn off LED 3
+    // Turn off LED 4
+}
