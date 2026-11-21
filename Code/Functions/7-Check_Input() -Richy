@@ -4,6 +4,10 @@ void Check_Input(void)
 
     if (PlayerInput != -1)
     {
+        Turn_On_LED(PlayerInput);
+        HAL_Delay(Button_Delay + 150);
+        Turn_Off_All_LEDs();
+
         if (PlayerInput == Sequence[PlayerPosition])
         {
             PlayerPosition++;
