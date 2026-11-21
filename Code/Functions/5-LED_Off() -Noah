@@ -1,7 +1,8 @@
 void Turn_Off_All_LEDs(void)
 {
-    // Turn off LED 1
-    // Turn off LED 2
-    // Turn off LED 3
-    // Turn off LED 4
+    // Clear PA0 (LED1) and PA1 (LED0)
+    GPIOA->ODR &= ~((1 << 0) | (1 << 1));
+
+    // Clear PC7 (LED2) and PC8 (LED3)
+    GPIOC->ODR &= ~((1 << 7) | (1 << 8));
 }
