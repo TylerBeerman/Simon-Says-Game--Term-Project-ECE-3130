@@ -1,13 +1,20 @@
 void Game_Over_Display(void)
 {
+    char text[17];
+
     Turn_Off_All_LEDs();
 
     // Display GAME OVER on LCD
-    // Display final Score on LCD
-}
+    LCD_Clear();
+    if (GameOver == 1)
+        LCD_Print("GAME OVER");
+    else
+        LCD_Print("YOU WIN");
 
-void Reset_Game(void)
-{
-    Initialize_Game();
-    Turn_Off_All_LEDs();
+    // Display final Score on LCD
+    LCD_SetCursor(1, 0);
+    sprintf(text, "Score: %d", Score);
+    LCD_Print(text);
+
+    HAL_Delay(1500);
 }
