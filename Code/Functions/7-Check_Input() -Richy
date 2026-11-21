@@ -1,1 +1,16 @@
-check the input function
+void Check_Input(void)
+{
+    PlayerInput = Read_Buttons();
+
+    if (PlayerInput != -1)
+    {
+        if (PlayerInput == Sequence[PlayerPosition])
+        {
+            PlayerPosition++;
+        }
+        else
+        {
+            GameOver = 1;
+        }
+    }
+}
