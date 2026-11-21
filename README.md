@@ -13,7 +13,7 @@ This project is being developed as a group project for **ECE 3130: Microcomputer
 ## Hardware Requirements
 
 - STM32 NUCLEO-L476RG microcontroller
-- EDUboardV2 with four onboard LEDs
+- EDUbaseV2 with four onboard LEDs
 - Four buttons for player input
 - LCD display (for game instructions and score)
 - Buzzer (for audio feedback)
