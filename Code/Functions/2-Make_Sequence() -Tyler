@@ -1,1 +1,6 @@
-make sequence function here
+void Generate_Sequence(void)
+{
+    RandomLED = rand() % 4;
+
+    Sequence[Round - 1] = RandomLED;
+}
