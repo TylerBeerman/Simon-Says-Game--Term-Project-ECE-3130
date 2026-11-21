@@ -1,16 +1,34 @@
 int Read_Buttons(void)
 {
-    if (/* Button 1 is pressed */)
+    uint32_t idr = GPIOB->IDR;
+
+    // SW5 (PB8) -> LED0 (Index 0)
+    if (idr & (1 << 8))
+    {
+        Wait_For_Release();
         return 0;
+    }
 
-    if (/* Button 2 is pressed */)
+    // SW4 (PB9) -> LED1 (Index 1)
+    if (idr & (1 << 9))
+    {
+        Wait_For_Release();
         return 1;
+    }
 
-    if (/* Button 3 is pressed */)
+    // SW3 (PB10) -> LED2 (Index 2)
+    if (idr & (1 << 10))
+    {
+        Wait_For_Release();
         return 2;
+    }
 
-    if (/* Button 4 is pressed */)
+    // SW2 (PB11) -> LED3 (Index 3)
+    if (idr & (1 << 11))
+    {
+        Wait_For_Release();
         return 3;
+    }
 
     return -1;
 }
