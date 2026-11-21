@@ -1,1 +1,13 @@
-game over funct
+void Game_Over_Display(void)
+{
+    Turn_Off_All_LEDs();
+
+    // Display GAME OVER on LCD
+    // Display final Score on LCD
+}
+
+void Reset_Game(void)
+{
+    Initialize_Game();
+    Turn_Off_All_LEDs();
+}
