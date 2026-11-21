@@ -1,1 +1,23 @@
-led on function
+void Turn_On_LED(int LED)
+{
+    Turn_Off_All_LEDs();
+
+    switch (LED)
+    {
+        case 0:
+            // Turn on LED 1
+            break;
+
+        case 1:
+            // Turn on LED 2
+            break;
+
+        case 2:
+            // Turn on LED 3
+            break;
+
+        case 3:
+            // Turn on LED 4
+            break;
+    }
+}
