@@ -29,6 +29,8 @@
   ******************************************************************************
   */
 #include "main.h"
+#include <stdlib.h>
+#include <stdio.h>
 
 // Sets up the system clock
 void SystemClock_Config(void);
@@ -36,61 +38,93 @@ void SystemClock_Config(void);
 // Sets of the GPIO pins
 static void MX_GPIO_Init(void);
 
+// Game functions
+void Initialize_Game(void);
+void Generate_Sequence(void);
+void Display_Sequence(void);
+void Turn_On_LED(int LED);
+void Turn_Off_All_LEDs(void);
+int Read_Buttons(void);
+void Wait_For_Release(void);
+void Check_Input(void);
+void Game_Over_Display(void);
+void Reset_Game(void);
+void Game_Delay(uint32_t ms);
+
+// LCD functions
+void Write_SR_LCD(uint8_t temp);
+void LCD_nibble_write(uint8_t temp, uint8_t s);
+void LCD_Command(uint8_t code);
+void LCD_WriteChar(uint8_t code);
+void LCD_Print(char *str);
+void LCD_Clear(void);
+void LCD_SetCursor(uint8_t row, uint8_t col);
+void LCD_Init(void);
+
 int Sequence[20];
 int Score = 0;
 int PlayerPosition = 0;
 int PlayerInput = -1;
-int GameOver = 0;
+volatile int GameOver = 0;
 int StartGame = 0;
 int Round = 1;
 int RandomLED;
 
-int Button1; int Button2; int Button3; int Button4;
+int Button2; int Button3; int Button4; int Button5;
 
 int LED_Delay = 500;
 int Button_Delay = 25;
+char Keypad_GetKey(void);
 
 // The main function, and the entry point of the program
 int main(void)
 {
-  HAL_Init();
-  SystemClock_Config();
-  MX_GPIO_Init();
+    HAL_Init();
+    SystemClock_Config();
+    MX_GPIO_Init();
+    LCD_Init();
+    Initialize_Game();
 
-  // TODO: Put any other initialization code here
-  // Initialize LCD
-  Initialize_Game();
+    while (1)
+    {
+        LCD_Clear();
+        LCD_Print("Simon Says");
+        LCD_SetCursor(1, 0);
+        LCD_Print("Press # to start");
 
-  while (1)
-  {
-    // TODO: Put your main code here. It will run over and over again until the program is stopped
+        // Wait until '#' is pressed
+        while (Keypad_GetKey() != '#') { }
 
-     // Wait for player to start
+        srand(HAL_GetTick());
+        GameOver = 0;
 
-        Generate_Sequence();
-
-        Display_Sequence();
-
-        PlayerPosition = 0;
-
-        while (PlayerPosition < Round && GameOver == 0)
+        while (GameOver == 0 && Round <= 20)
         {
-            Check_Input();
+            Generate_Sequence();
+            Display_Sequence();
+
+            PlayerPosition = 0;
+
+            while (PlayerPosition < Round && GameOver == 0)
+            {
+                Check_Input();
+            }
+
+            if (GameOver == 0)
+            {
+                Score = Round;
+                Round++;
+                HAL_Delay(500);
+            }
         }
 
-        if (GameOver == 1)
-        {
-            Game_Over_Display();
+        Game_Over_Display();
 
-            // Wait for restart
-        }
-        else
-        {
-            Score = Round;
-            Round++;
-        }
-    
-	}
+        // Wait for '#' to restart
+        while (Keypad_GetKey() != '#') { }
+
+        Reset_Game();
+    }
 }
 
 
@@ -98,7 +132,66 @@ int main(void)
 // Set up the GPIO pins
 static void MX_GPIO_Init(void)
 {
-  // TODO: Initialize any input or output pins you'll use here
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+
+  // LCD: Shift Clock (PA5), Latch (PA10)
+  GPIO_InitStruct.Pin = GPIO_PIN_5 | GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  // LCD: Data (PB5)
+  GPIO_InitStruct.Pin = GPIO_PIN_5;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // Keypad Columns: PB1, PB2, PB3, PB4 as Outputs
+  GPIO_InitStruct.Pin = GPIO_PIN_1 | GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // Keep Col 0 (PB1) HIGH so '*' (Row 3 / PB11) generates an interrupt when pressed
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(GPIOB, GPIO_PIN_2 | GPIO_PIN_3 | GPIO_PIN_4, GPIO_PIN_RESET);
+
+  // Keypad Rows: PB8, PB9, PB10 as regular Inputs with Pull-Down
+  GPIO_InitStruct.Pin = GPIO_PIN_8 | GPIO_PIN_9 | GPIO_PIN_10;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // Row 3 (PB11): EXTI Interrupt with Pull-Down for '*' detection
+  GPIO_InitStruct.Pin = GPIO_PIN_11;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+  // LEDs: LED1 (PA0), LED0 (PA1)
+  GPIO_InitStruct.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+  // LEDs: LED2 (PC7), LED3 (PC8)
+  GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_8;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
+
+  // Enable EXTI line 15_10 in NVIC (PB11 triggers EXTI15_10_IRQn)
+  HAL_NVIC_SetPriority(EXTI15_10_IRQn, 2, 0);
+  HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
 }
 
 // this is the start of our game functions
@@ -121,17 +214,38 @@ void Generate_Sequence(void)
 void Display_Sequence(void)
 {
     int i;
+    char text[17];
+
+    LCD_Clear();
+    sprintf(text, "Round %d", Round);
+    LCD_Print(text);
+    LCD_SetCursor(1, 0);
+    LCD_Print("Watch closely");
+
+    HAL_Delay(750);
 
     for (i = 0; i < Round; i++)
     {
         Turn_On_LED(Sequence[i]);
 
-        Delay(LED_Delay);
+        HAL_Delay(LED_Delay);
 
         Turn_Off_All_LEDs();
 
-        Delay(250);
+        HAL_Delay(250);
     }
+
+    LCD_Clear();
+    LCD_Print("Your turn");
+}
+
+void Turn_Off_All_LEDs(void)
+{
+    // Clear PA0 (LED1) and PA1 (LED0)
+    GPIOA->ODR &= ~((1 << 0) | (1 << 1));
+
+    // Clear PC7 (LED2) and PC8 (LED3)
+    GPIOC->ODR &= ~((1 << 7) | (1 << 8));
 }
 
 void Turn_On_LED(int LED)
@@ -141,46 +255,69 @@ void Turn_On_LED(int LED)
     switch (LED)
     {
         case 0:
-            // Turn on LED 1
+            // LED0 -> PA1
+            GPIOA->ODR |= (1 << 1);
             break;
 
         case 1:
-            // Turn on LED 2
+            // LED1 -> PA0
+            GPIOA->ODR |= (1 << 0);
             break;
 
         case 2:
-            // Turn on LED 3
+            // LED2 -> PC7
+            GPIOC->ODR |= (1 << 7);
             break;
 
         case 3:
-            // Turn on LED 4
+            // LED3 -> PC8
+            GPIOC->ODR |= (1 << 8);
             break;
     }
 }
 
-void Turn_Off_All_LEDs(void)
-{
-    // Turn off LED 1
-    // Turn off LED 2
-    // Turn off LED 3
-    // Turn off LED 4
-}
-
 int Read_Buttons(void)
 {
-    if (/* Button 1 is pressed */)
+    uint32_t idr = GPIOB->IDR;
+
+    // SW5 (PB8) -> LED0 (Index 0)
+    if (idr & (1 << 8))
+    {
+        Wait_For_Release();
         return 0;
+    }
 
-    if (/* Button 2 is pressed */)
+    // SW4 (PB9) -> LED1 (Index 1)
+    if (idr & (1 << 9))
+    {
+        Wait_For_Release();
         return 1;
+    }
 
-    if (/* Button 3 is pressed */)
+    // SW3 (PB10) -> LED2 (Index 2)
+    if (idr & (1 << 10))
+    {
+        Wait_For_Release();
         return 2;
+    }
 
-    if (/* Button 4 is pressed */)
+    // SW2 (PB11) -> LED3 (Index 3)
+    if (idr & (1 << 11))
+    {
+        Wait_For_Release();
         return 3;
+    }
 
     return -1;
+}
+
+void Wait_For_Release(void)
+{
+    HAL_Delay(Button_Delay);
+
+    while ((GPIOB->IDR & 0x0F00) != 0) { }
+
+    HAL_Delay(Button_Delay);
 }
 
 void Check_Input(void)
@@ -189,6 +326,10 @@ void Check_Input(void)
 
     if (PlayerInput != -1)
     {
+        Turn_On_LED(PlayerInput);
+        HAL_Delay(Button_Delay + 150);
+        Turn_Off_All_LEDs();
+
         if (PlayerInput == Sequence[PlayerPosition])
         {
             PlayerPosition++;
@@ -202,10 +343,23 @@ void Check_Input(void)
 
 void Game_Over_Display(void)
 {
+    char text[17];
+
     Turn_Off_All_LEDs();
 
     // Display GAME OVER on LCD
+    LCD_Clear();
+    if (GameOver == 1)
+        LCD_Print("GAME OVER");
+    else
+        LCD_Print("YOU WIN");
+
     // Display final Score on LCD
+    LCD_SetCursor(1, 0);
+    sprintf(text, "Score: %d", Score);
+    LCD_Print(text);
+
+    HAL_Delay(1500);
 }
 
 void Reset_Game(void)
@@ -302,7 +456,17 @@ void LCD_Init(void) {
     LCD_Clear();
 }
 
-char Keypad_GetKey(void) {
+void Game_Delay(uint32_t ms)
+{
+    uint32_t start = HAL_GetTick();
+    while ((HAL_GetTick() - start < ms) && !GameOver)
+    {
+        // Breaks immediately if '*' sets GameOver = 1
+    }
+}
+
+char Keypad_GetKey(void)
+{
     const char keymap[4][4] = {
         {'1', '2', '3', 'A'},
         {'4', '5', '6', 'B'},
@@ -313,27 +477,57 @@ char Keypad_GetKey(void) {
     const uint16_t colPins[4] = {GPIO_PIN_1, GPIO_PIN_2, GPIO_PIN_3, GPIO_PIN_4};
     const uint16_t rowPins[4] = {GPIO_PIN_8, GPIO_PIN_9, GPIO_PIN_10, GPIO_PIN_11};
 
+    // Temporarily disable PB11 interrupt during scanning
+    HAL_NVIC_DisableIRQ(EXTI15_10_IRQn);
+
+    char pressedKey = 0;
+
     for (int col = 0; col < 4; col++) {
-        // Set current column HIGH
         HAL_GPIO_WritePin(GPIOB, colPins[col], GPIO_PIN_SET);
 
-        for (volatile int d = 0; d < 50; d++);
+        for (volatile int d = 0; d < 100; d++);
 
         for (int row = 0; row < 4; row++) {
             if (HAL_GPIO_ReadPin(GPIOB, rowPins[row]) == GPIO_PIN_SET) {
-                // Wait for release (debounce)
+                // Wait for release
                 while (HAL_GPIO_ReadPin(GPIOB, rowPins[row]) == GPIO_PIN_SET);
-                // Reset column LOW before returning
+                pressedKey = keymap[row][col];
                 HAL_GPIO_WritePin(GPIOB, colPins[col], GPIO_PIN_RESET);
-                return keymap[row][col];
+                goto finish_scan;
             }
         }
-
-        // Set column LOW
         HAL_GPIO_WritePin(GPIOB, colPins[col], GPIO_PIN_RESET);
     }
 
-    return 0; // No key pressed
+finish_scan:
+    // Restore Col 0 to HIGH so '*' is ready to trigger the interrupt
+    HAL_GPIO_WritePin(GPIOB, GPIO_PIN_1, GPIO_PIN_SET);
+    
+    // Clear any pending interrupt caused by scanning and re-enable
+    __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_11);
+    HAL_NVIC_EnableIRQ(EXTI15_10_IRQn);
+
+    return pressedKey;
+}
+
+// Interrupt service routine for PB11
+void EXTI15_10_IRQHandler(void)
+{
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_11);
+}
+
+// HAL Callback
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+    if (GPIO_Pin == GPIO_PIN_11)
+    {
+        // Check if Col 0 (PB1) is HIGH to confirm '*' was pressed
+        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET)
+        {
+            GameOver = 1;         // Abort game instantly
+            Turn_Off_All_LEDs();
+        }
+    }
 }
 
 
