@@ -1,1 +1,15 @@
-display the sequence function here
+void Display_Sequence(void)
+{
+    int i;
+
+    for (i = 0; i < Round; i++)
+    {
+        Turn_On_LED(Sequence[i]);
+
+        Delay(LED_Delay);
+
+        Turn_Off_All_LEDs();
+
+        Delay(250);
+    }
+}
