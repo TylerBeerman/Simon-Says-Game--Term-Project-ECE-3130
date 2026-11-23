@@ -50,7 +50,7 @@ void Check_Input(void);
 void Game_Over_Display(void);
 void Reset_Game(void);
 void Game_Delay(uint32_t ms);
-
+void Buzzer(int delay, int cycles);
 // LCD functions
 void Write_SR_LCD(uint8_t temp);
 void LCD_nibble_write(uint8_t temp, uint8_t s);
@@ -182,8 +182,8 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-  // LEDs: LED2 (PC7), LED3 (PC8)
-  GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_8;
+  // LEDs: LED2 (PC7), LED3 (PC8), and Buzzer LED(PC9)
+  GPIO_InitStruct.Pin = GPIO_PIN_7 | GPIO_PIN_8 | GPIO_PIN_9;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
@@ -320,24 +320,34 @@ void Wait_For_Release(void)
 
     HAL_Delay(Button_Delay);
 }
+void Buzzer(int delay, int cycles){ //buzzer function
+	for(int i = 0; i < cycles; i++){
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_SET);
+		HAL_Delay(delay);
+		
+		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_9, GPIO_PIN_RESET);
+		HAL_Delay(delay);
+	}
+}
 
 void Check_Input(void)
 {
-    PlayerInput = Read_Buttons();
+    PlayerInput = Read_Buttons(); //stores the button that was pressed
 
-    if (PlayerInput != -1)
+    if (PlayerInput != -1) //checks if the button was actually pressed
     {
-        Turn_On_LED(PlayerInput);
-        HAL_Delay(Button_Delay + 150);
-        Turn_Off_All_LEDs();
+        Turn_On_LED(PlayerInput); // turns on specific led
+        HAL_Delay(Button_Delay + 150); // delay
+        Turn_Off_All_LEDs(); // turns off all leds
 
-        if (PlayerInput == Sequence[PlayerPosition])
+        if (PlayerInput == Sequence[PlayerPosition]) //checks input by checking the value in the sequence array at the players position
         {
-            PlayerPosition++;
+            PlayerPosition++; //increments the player position
+						Buzzer(1,10); // short buzzer indicating correct answer//
         }
         else
-        {
-            GameOver = 1;
+        {				
+            GameOver = 1; // if its not correct game over.
         }
     }
 }
@@ -350,8 +360,10 @@ void Game_Over_Display(void)
 
     // Display GAME OVER on LCD
     LCD_Clear();
-    if (GameOver == 1)
+    if (GameOver == 1){
+		Buzzer(1, 250); //Long buzzer indicating game over//
         LCD_Print("GAME OVER");
+		}
     else
         LCD_Print("YOU WIN");
 
