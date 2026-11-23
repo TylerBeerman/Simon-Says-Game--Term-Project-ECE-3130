@@ -293,6 +293,7 @@ int Read_Buttons(void)
         Wait_For_Release();
         return 1;
     }
+		
 
     // SW3 (PB10) -> LED2 (Index 2)
     if (idr & (1 << 10))
@@ -521,10 +522,22 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
     if (GPIO_Pin == GPIO_PIN_11)
     {
-        // Check if Col 0 (PB1) is HIGH to confirm '*' was pressed
-        if (HAL_GPIO_ReadPin(GPIOB, GPIO_PIN_1) == GPIO_PIN_SET)
+        // Drop Col 0 (PB1) LOW and see if PB11 follows it
+        GPIOB->ODR &= ~(1 << 1);
+        for (volatile int d = 0; d < 200; d++);   // short settle time (don't use HAL_Delay in an ISR)
+
+        uint8_t starPressed = ((GPIOB->IDR & (1 << 11)) == 0);
+
+        // Restore Col 0 HIGH so '*' can trigger again
+        GPIOB->ODR |= (1 << 1);
+        for (volatile int d = 0; d < 200; d++);
+
+        // Restoring PB1 creates a new rising edge if '*' is still held, so clear it
+        __HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_11);
+
+        if (starPressed)
         {
-            GameOver = 1;         // Abort game instantly
+            GameOver = 1;
             Turn_Off_All_LEDs();
         }
     }
